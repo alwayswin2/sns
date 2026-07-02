@@ -127,10 +127,6 @@ def parse_sms(sms_text: str) -> Optional[dict]:
     """토스 입금 알림 파싱 — 입금액 + 날짜 추출
     예: '68,873원 입금 토스뱅크 26/7/2'
     """
-    # 입금 알림인지 확인
-    if "입금" not in sms_text:
-        return None
-
     amount_match = re.search(r"([\d,]+)원", sms_text)
     if not amount_match:
         return None
