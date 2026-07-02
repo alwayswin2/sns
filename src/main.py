@@ -28,10 +28,14 @@ async def receive_sms(request: Request, x_secret: str = Header(default="")):
 
     import json as _json
     raw = await request.body()
-    try:
-        body = _json.loads(raw.decode("utf-8"))
-        sms_text = body.get("text", "")
-    except Exception:
+    for enc in ("utf-8", "cp949", "euc-kr"):
+        try:
+            body = _json.loads(raw.decode(enc))
+            sms_text = body.get("text", "")
+            break
+        except Exception:
+            sms_text = ""
+    if not sms_text:
         sms_text = raw.decode("utf-8", errors="ignore")
 
     if not sms_text:
