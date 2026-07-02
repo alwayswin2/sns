@@ -67,7 +67,7 @@ def add_deposit_row(
             "게스트명": {
                 "title": [{"text": {"content": "(입금 확인 대기)"}}]
             },
-            "총입금액(문자)": {
+            "입금액": {
                 "number": total_amount
             },
             "채널": {
