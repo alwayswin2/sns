@@ -124,18 +124,28 @@ def _parse_items_simple(body: str) -> list[PayoutItem]:
 
 
 def parse_sms(sms_text: str) -> Optional[dict]:
-    """은행 입금 문자 파싱 — 입금액 + 날짜 추출"""
-    amount_match = re.search(r"([\d,]+)원", sms_text)
-    date_match = re.search(r"(\d{2})/(\d{2})", sms_text)
+    """토스 입금 알림 파싱 — 입금액 + 날짜 추출
+    예: '68,873원 입금 토스뱅크 26/7/2'
+    """
+    # 입금 알림인지 확인
+    if "입금" not in sms_text:
+        return None
 
+    amount_match = re.search(r"([\d,]+)원", sms_text)
     if not amount_match:
         return None
 
     amount = int(amount_match.group(1).replace(",", ""))
-    date = ""
+
+    # 날짜: "26/7/2" 형식
+    import datetime
+    date_match = re.search(r"(\d{2})/(\d{1,2})/(\d{1,2})", sms_text)
     if date_match:
-        import datetime
-        year = datetime.date.today().year
-        date = f"{year}-{date_match.group(1)}-{date_match.group(2)}"
+        year = 2000 + int(date_match.group(1))
+        month = date_match.group(2).zfill(2)
+        day = date_match.group(3).zfill(2)
+        date = f"{year}-{month}-{day}"
+    else:
+        date = datetime.date.today().isoformat()
 
     return {"amount": amount, "date": date, "raw": sms_text}
