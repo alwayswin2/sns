@@ -63,6 +63,7 @@ def process_new_emails(processed_ids_path: Path = None):
     if processed_ids_path is None:
         processed_ids_path = Path(__file__).parent.parent / "logs" / "processed_emails.json"
 
+    processed_ids_path.parent.mkdir(parents=True, exist_ok=True)
     processed = set()
     if processed_ids_path.exists():
         processed = set(json.loads(processed_ids_path.read_text()))
