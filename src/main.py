@@ -26,11 +26,13 @@ async def receive_sms(request: Request, x_secret: str = Header(default="")):
     if WEBHOOK_SECRET and x_secret != WEBHOOK_SECRET:
         raise HTTPException(status_code=401, detail="인증 실패")
 
+    import json as _json
+    raw = await request.body()
     try:
-        body = await request.json()
+        body = _json.loads(raw.decode("utf-8"))
         sms_text = body.get("text", "")
     except Exception:
-        sms_text = (await request.body()).decode("utf-8", errors="ignore")
+        sms_text = raw.decode("utf-8", errors="ignore")
 
     if not sms_text:
         raise HTTPException(status_code=400, detail="문자 내용 없음")
