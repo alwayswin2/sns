@@ -35,9 +35,10 @@ async def receive_sms(request: Request, x_secret: str = Header(default="")):
     if not sms_text:
         raise HTTPException(status_code=400, detail="문자 내용 없음")
 
+    print(f"[SMS 수신] text={repr(sms_text)}")
     parsed = parse_sms(sms_text)
     if not parsed:
-        return JSONResponse({"status": "skip", "reason": "입금 문자 아님"})
+        return JSONResponse({"status": "skip", "reason": "입금 문자 아님", "received": sms_text})
 
     # Notion에 임시 기록
     add_deposit_row(
