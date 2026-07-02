@@ -37,13 +37,14 @@ def parse_payout_email(body: str) -> Optional[PayoutEmail]:
         return None
     total_amount = int(total_match.group(1).replace(",", ""))
 
-    # 지급 예정일: "2026년 7월 9일까지 입금"
-    date_match = re.search(r"(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일까지\s*입금", body)
-    if not date_match:
-        date_match = re.search(r"(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일", body)
+    # 실제 지급일: "대금이 6월 28일에 지급되었으며" (연도 없음 → 이메일 본문의 연도로 보완)
+    import datetime
     payout_date = ""
-    if date_match:
-        payout_date = _parse_date(date_match.group(1), date_match.group(2), date_match.group(3))
+    paid_match = re.search(r"대금이\s*(\d{1,2})월\s*(\d{1,2})일에\s*지급되었으며", body)
+    if paid_match:
+        year_match = re.search(r"(\d{4})년", body)
+        year = year_match.group(1) if year_match else str(datetime.date.today().year)
+        payout_date = _parse_date(year, paid_match.group(1), paid_match.group(2))
 
     items = _parse_items_simple(body)
 
