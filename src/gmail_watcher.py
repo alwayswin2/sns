@@ -7,7 +7,7 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
 from email_parser import parse_payout_email
-from notion_db import add_payout_row
+from notion_db import add_payout_row, is_email_processed
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 TOKEN_PATH = Path(__file__).parent.parent / "config" / "gmail_token.json"
@@ -81,15 +81,14 @@ def _save_processed(processed: set):
 
 def process_new_emails(processed_ids_path: Path = None):
     """새 정산 메일 처리 → Notion 기록"""
-    processed = _load_processed()
-
     service = get_gmail_service()
     messages = fetch_payout_emails(service)
 
     newly_processed = []
     for msg in messages:
         msg_id = msg["id"]
-        if msg_id in processed:
+        if is_email_processed(msg_id):
+            print(f"[SKIP] 메일 {msg_id} 이미 처리됨 (Notion 확인)")
             continue
 
         body = get_email_body(service, msg_id)
@@ -108,17 +107,13 @@ def process_new_emails(processed_ids_path: Path = None):
                     checkout=item.checkout,
                     amount=item.amount,
                     total_deposit=payout.total_amount,
+                    email_id=msg_id,
                 )
             print(f"[OK] 메일 {msg_id} → {len(payout.items)}건 Notion 기록 완료")
         else:
             print(f"[SKIP] 메일 {msg_id} 파싱 실패")
 
         newly_processed.append(msg_id)
-
-    if newly_processed:
-        processed.update(newly_processed)
-        _save_processed(processed)
-        print(f"[처리된 ID 목록] {json.dumps(list(processed))}")
 
     return len(newly_processed)
 

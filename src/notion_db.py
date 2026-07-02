@@ -7,15 +7,28 @@ notion = Client(auth=os.environ["NOTION_TOKEN"])
 DATABASE_ID = os.environ["NOTION_DATABASE_ID"]
 
 
+def is_email_processed(email_id: str) -> bool:
+    """Notion DB에서 해당 이메일 ID가 이미 기록됐는지 확인"""
+    result = notion.databases.query(
+        database_id=DATABASE_ID,
+        filter={
+            "property": "이메일ID",
+            "rich_text": {"equals": email_id}
+        }
+    )
+    return len(result.get("results", [])) > 0
+
+
 def add_payout_row(
     payout_date: str,        # "2026-07-08"
-    guest_name: str,         # "HMGANYRYZK"
-    reservation_id: str,     # "170089..."
-    property_name: str,      # "제주"
+    guest_name: str,
+    reservation_id: str,
+    property_name: str,
     checkin: str,            # "2026-07-01"
     checkout: str,           # "2026-07-02"
-    amount: int,             # 72498
-    total_deposit: int,      # 68873 (문자 기준 총입금액)
+    amount: int,
+    total_deposit: int,
+    email_id: str = "",
     note: str = "",
 ):
     notion.pages.create(
@@ -44,6 +57,9 @@ def add_payout_row(
             },
             "채널": {
                 "select": {"name": "에어비앤비"}
+            },
+            "이메일ID": {
+                "rich_text": [{"text": {"content": email_id}}]
             },
             "비고": {
                 "rich_text": [{"text": {"content": note}}]
