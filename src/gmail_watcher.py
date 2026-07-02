@@ -58,15 +58,30 @@ def get_email_body(service, msg_id: str) -> str:
     return ""
 
 
+PROCESSED_IDS_ENV = "PROCESSED_EMAIL_IDS"
+
+
+def _load_processed() -> set:
+    """처리된 메일 ID 로드 — 환경변수 우선, 없으면 파일"""
+    env_val = os.environ.get(PROCESSED_IDS_ENV, "")
+    if env_val:
+        return set(json.loads(env_val))
+    path = Path(__file__).parent.parent / "logs" / "processed_emails.json"
+    if path.exists():
+        return set(json.loads(path.read_text()))
+    return set()
+
+
+def _save_processed(processed: set):
+    """처리된 메일 ID 저장 — 파일에만 저장 (Railway는 환경변수 수동 업데이트)"""
+    path = Path(__file__).parent.parent / "logs" / "processed_emails.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(list(processed), ensure_ascii=False, indent=2))
+
+
 def process_new_emails(processed_ids_path: Path = None):
     """새 정산 메일 처리 → Notion 기록"""
-    if processed_ids_path is None:
-        processed_ids_path = Path(__file__).parent.parent / "logs" / "processed_emails.json"
-
-    processed_ids_path.parent.mkdir(parents=True, exist_ok=True)
-    processed = set()
-    if processed_ids_path.exists():
-        processed = set(json.loads(processed_ids_path.read_text()))
+    processed = _load_processed()
 
     service = get_gmail_service()
     messages = fetch_payout_emails(service)
@@ -100,8 +115,11 @@ def process_new_emails(processed_ids_path: Path = None):
 
         newly_processed.append(msg_id)
 
-    processed.update(newly_processed)
-    processed_ids_path.write_text(json.dumps(list(processed), ensure_ascii=False, indent=2))
+    if newly_processed:
+        processed.update(newly_processed)
+        _save_processed(processed)
+        print(f"[처리된 ID 목록] {json.dumps(list(processed))}")
+
     return len(newly_processed)
 
 

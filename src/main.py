@@ -42,29 +42,21 @@ async def receive_sms(request: Request, x_secret: str = Header(default="")):
         raise HTTPException(status_code=400, detail="문자 내용 없음")
 
     print(f"[SMS 수신] text={repr(sms_text)}")
+    # 금액 파싱 (없어도 메일 처리는 실행)
     parsed = parse_sms(sms_text)
-    if not parsed:
-        return JSONResponse({"status": "skip", "reason": "입금 문자 아님", "received": sms_text})
+    print(f"[SMS 파싱] {parsed}")
 
-    # Notion에 임시 기록
-    add_deposit_row(
-        deposit_date=parsed["date"],
-        total_amount=parsed["amount"],
-        raw_sms=parsed["raw"],
-    )
-
-    # 동시에 새 정산 메일도 처리
+    # 정산 메일 처리
     try:
         processed = process_new_emails()
         return JSONResponse({
             "status": "ok",
-            "sms_amount": parsed["amount"],
+            "sms_amount": parsed["amount"] if parsed else None,
             "emails_processed": processed,
         })
     except Exception as e:
         return JSONResponse({
             "status": "partial",
-            "sms_amount": parsed["amount"],
             "email_error": str(e),
         })
 
