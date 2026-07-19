@@ -73,8 +73,8 @@ def _parse_items_simple(body: str) -> list[PayoutItem]:
     while i < len(nlines):
         _, line = nlines[i]
 
-        # 게스트명 + 금액: "윤주 김   ₩72,498 KRW" / "윤주 김   -₩3,625 KRW" / "Suah Kim,   ₩87,761 KRW"
-        amount_match = re.match(r"^([가-힣a-zA-Z\s,]+?)\s{2,}(-?)[₩]?([\d,]+)\s*KRW$", line)
+        # 게스트명 + 금액: "윤주 김   ₩72,498 KRW" / "윤주 김   -₩3,625 KRW" / "Suah Kim,   ₩87,761 KRW" / "Ayuner 彭   ₩379,064 KRW"
+        amount_match = re.match(r"^([가-힣a-zA-Z一-鿿\s,]+?)\s{2,}(-?)[₩]?([\d,]+)\s*KRW$", line)
         if amount_match:
             guest_name = amount_match.group(1).strip().rstrip(",").strip()
             sign = -1 if amount_match.group(2) == "-" else 1
