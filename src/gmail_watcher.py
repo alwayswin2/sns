@@ -35,7 +35,7 @@ def get_gmail_service():
     return build("gmail", "v1", credentials=creds)
 
 
-def fetch_payout_emails(service, max_results: int = 10):
+def fetch_payout_emails(service, max_results: int = 50):
     query = "from:automated@airbnb.com subject:지급"
     result = service.users().messages().list(
         userId="me", q=query, maxResults=max_results
