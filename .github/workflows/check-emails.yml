@@ -1,0 +1,45 @@
+name: 정산 메일 확인
+
+# Railway 크론이 조용히 멈추는 문제(7/5, 9/8 두 차례 재발) 때문에 이쪽으로 이전함.
+# 실행 이력이 Actions 탭에 남고, 실패하면 GitHub이 이메일로 알려줌.
+on:
+  schedule:
+    - cron: "0 * * * *"   # 매시 정각 (UTC)
+  workflow_dispatch:       # 수동 실행용
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 웹훅 호출
+        env:
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+        run: |
+          echo "호출 시각: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+          # --fail-with-body: HTTP 4xx/5xx면 본문을 남기고 non-zero 종료
+          # --max-time: 서버가 응답을 안 주면 무한정 매달리지 않도록
+          http_code=$(curl -sS --max-time 120 \
+            -o response.json -w '%{http_code}' \
+            -X POST https://sns-production-7b5b.up.railway.app/webhook/check-emails \
+            -H "x-secret: $WEBHOOK_SECRET") || {
+              echo "::error::웹훅 호출 자체가 실패했습니다 (네트워크/타임아웃)"
+              exit 1
+            }
+
+          echo "HTTP 상태: $http_code"
+          echo "응답: $(cat response.json)"
+
+          if [ "$http_code" != "200" ]; then
+            echo "::error::웹훅이 $http_code 를 반환했습니다. sns 서비스 로그를 확인하세요."
+            exit 1
+          fi
+
+          # 200이어도 {"status":"ok"}가 아니면 실패로 간주 (조용한 실패 방지)
+          if ! grep -q '"status":"ok"' response.json; then
+            echo "::error::응답이 정상 형식이 아닙니다."
+            exit 1
+          fi
+
+          processed=$(grep -o '"processed":[0-9]*' response.json | cut -d: -f2)
+          echo "처리된 메일: ${processed:-0}건"
