@@ -4,7 +4,8 @@ name: 정산 메일 확인
 # 실행 이력이 Actions 탭에 남고, 실패하면 GitHub이 이메일로 알려줌.
 on:
   schedule:
-    - cron: "0 * * * *"   # 매시 정각 (UTC)
+    # 매시 37분 (UTC). 정각은 GitHub Actions 부하가 몰려 지연/누락이 잦아 일부러 피함.
+    - cron: "37 * * * *"
   workflow_dispatch:       # 수동 실행용
 
 jobs:
