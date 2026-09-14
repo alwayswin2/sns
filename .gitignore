@@ -4,3 +4,6 @@ config/gmail_credentials.json
 logs/processed_emails.json
 src/__pycache__/
 *.pyc
+
+# Railway CLI가 남긴 임시 설정 (구 인프라 잔재)
+.railway-config-pull-*/
