@@ -28,9 +28,16 @@
 ### 구 시스템이 멈춘 경위 (2026-10-08)
 
 재배포로 되살릴 수 있었지만 **되살리지 않고 전환하기로 결정**했습니다(2026-10-11).
-마지막 배포가 `REMOVED` 상태이고 로그 끝이 정상 종료(`Stopping Container`)인데,
-`restartPolicyType: ON_FAILURE` 라서 exit 0 에는 자동 재시작이 걸리지 않았습니다.
-2026-08-02 와 같은 패턴이지만 이번엔 플랜이 `hobby` 라 크레딧 소진은 아닙니다.
+
+**원인은 트라이얼 크레딧 소진입니다** — 2026-08-02 와 완전히 같은 유형입니다.
+Railway 가 크레딧 소진 시 배포를 강제 종료하는데, 마지막 배포가 `REMOVED` 이고
+로그 끝이 정상 종료(`Stopping Container`, exit 0)라 `restartPolicyType: ON_FAILURE`
+로는 자동 재시작이 걸리지 않아 그대로 방치됐습니다.
+
+> ⚠️ **정정(2026-10-12)**: 처음에는 "플랜이 `hobby` 라 크레딧 소진이 아니다"라고 적었으나
+> **틀렸습니다.** `railway deployment list` 의 배포 메타데이터에 찍힌 `"plan": "hobby"` 는
+> 워크스페이스 플랜이 아닙니다. 실제 Billing 화면은 `Trial Workspace` / `Trial expired` 였습니다.
+> **플랜·과금은 CLI 로 확인할 수 없으니 반드시 대시보드 Billing 화면으로 보세요.**
 
 구 시스템 정지 중(10/8~10/11) 들어온 정산 메일은 1건(`1a123f724db2dc3e`)뿐이며
 아래 "복수 게스트 메일" 항목대로 수동 백필했습니다. **추가 누락은 없습니다.**
@@ -239,8 +246,18 @@
 
 - [x] 배포 제거 — `activeDeployments: []`, 마지막 배포 `REMOVED`
 - [x] `curl https://sns-production-7b5b.up.railway.app/` → **404 Application not found** 확인
-- [ ] (사용자 확인) Railway 대시보드에서 `splendid-warmth` 과금이 실제로 멈췄는지 확인
-      — 배포가 없으면 과금도 없어야 하지만 플랜이 `hobby` 라 구독료는 별도일 수 있습니다
+- [x] 과금 확인 완료 (2026-10-12, Billing 화면) — **추가 과금 없음**
+
+| 항목 | 값 |
+|---|---|
+| Active Plan | **Trial Workspace** (우측 상단 `Trial expired`) |
+| 2026-10-09 청구 | **$ 0.00** ← 이미 멈춤 |
+| 2026-09-09 / 2026-08-09 청구 | $ 5.00 / $ 5.00 |
+| 등록 카드 | 본인 확인용(`Used for verification purposes`) |
+
+> Hobby 구독이 아니므로 **월 기본료가 없습니다.** `Unlock Hobby plan` 을 누르지 않는 한 청구는 없습니다.
+> `railway metrics --service sns` 도 CPU/메모리/네트워크/디스크 전부 0 으로 확인됐습니다.
+> **플랜 다운그레이드도 프로젝트 삭제도 불필요합니다** — 돈이 안 나가므로 되돌리기 경로로 남겨둬도 됩니다.
 
 - [ ] MacroDroid 를 쓴다면, 그 전에 반드시 웹훅 URL 을 Apps Script 웹 앱 주소로 바꿔둘 것
       (안 바꾸면 입금 문자 트리거가 끊깁니다 — 단, 4시간 주기 실행은 계속 되므로 기록 자체는 유지됩니다)
