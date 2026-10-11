@@ -2,11 +2,15 @@ name: 정산 메일 확인
 
 # Railway 크론이 조용히 멈추는 문제(7/5, 9/8 두 차례 재발) 때문에 이쪽으로 이전함.
 # 실행 이력이 Actions 탭에 남고, 실패하면 GitHub이 이메일로 알려줌.
+# 2026-10-11: Apps Script 전환(CUTOVER 6단계)으로 자동 실행을 중단함.
+# 호출 대상인 Railway sns 서비스가 2026-10-08 에 배포가 사라져 404 가 되었고,
+# 되살리지 않고 GAS 로 전환하기로 결정했다. 스케줄을 살려두면 매시간 실패 알림만 쌓인다.
+# 되돌리려면 아래 schedule 블록의 주석을 풀고 Railway sns 를 재배포하면 된다.
 on:
-  schedule:
-    # 매시 37분 (UTC). 정각은 GitHub Actions 부하가 몰려 지연/누락이 잦아 일부러 피함.
-    - cron: "37 * * * *"
-  workflow_dispatch:       # 수동 실행용
+  # schedule:
+  #   # 매시 37분 (UTC). 정각은 GitHub Actions 부하가 몰려 지연/누락이 잦아 일부러 피함.
+  #   - cron: "37 * * * *"
+  workflow_dispatch:       # 수동 실행용 (되돌리기 경로로 남겨둠)
 
 jobs:
   check:
