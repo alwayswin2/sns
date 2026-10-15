@@ -336,6 +336,26 @@ console.log('\n[MANUAL_REVIEW — 잘못된 값을 미리 써두지 않음]');
   t('사람이 확인하도록 알림', h2.sentMail.some(m => m.body.indexOf('255287') >= 0));
 }
 
+/* ── 13. 사람이 이미 기록한 MANUAL_REVIEW 는 알림을 멈춘다 ─── */
+console.log('\n[MANUAL_REVIEW — 수동 기록 후 알림 중단]');
+{
+  // 복수 게스트 메일을 사람이 게스트별 순액으로 나눠 기록해 둔 상태
+  const { h, notion } = setup([{ id: 'MSG_P', subject: '지급', date: '2026-10-10', html: THREE_ITEMS }]);
+  notion.pages.push({ properties: { '이메일ID': { rich_text: [{ plain_text: 'MSG_P' }] } } });
+  const r = h.ctx.processNewPayoutEmails();
+  eq('수동 기록된 건은 MANUAL_REVIEW 아님', r.stats.manual_review, 0);
+  eq('중복으로 집계', r.stats.duplicate, 1);
+  eq('행을 추가로 만들지 않음', notion.pages.length, 1);
+  t('processed 로 넘김', h.ctx.isProcessedCached('MSG_P'));
+  t('알림 없음', !h.sentMail.some(m => m.subject.indexOf('MANUAL_REVIEW') >= 0));
+
+  // Notion 조회가 실패하면 판단할 수 없으므로 알림을 유지한다.
+  const { h: h2 } = setup([{ id: 'MSG_Q', subject: '지급', date: '2026-10-10', html: THREE_ITEMS }], { failQuery: true });
+  const r2 = h2.ctx.processNewPayoutEmails();
+  eq('조회 실패 시 MANUAL_REVIEW 유지', r2.stats.manual_review, 1);
+  t('조회 실패 시 processed 안 함', !h2.ctx.isProcessedCached('MSG_Q'));
+}
+
 /* ── 결과 ────────────────────────────────────────────────── */
 console.log(`\n통합 테스트 결과: ${pass} 통과 / ${fail} 실패`);
 process.exit(fail === 0 ? 0 : 1);

@@ -154,6 +154,18 @@ function processSingleMessage_(msg, allowNotionLookup) {
   // 자동으로 행을 만들어 두면 사람이 고치기 전에 잘못된 값이 장부에 남으므로,
   // 기록하지 않고 알림만 보낸다. (기록할지 말지는 사람이 보고 결정한다)
   if (verdict.status === STATUS.MANUAL_REVIEW) {
+    // 단, 사람이 이 메일ID 로 장부에 이미 기록해 두었다면 확인이 끝난 것으로 본다.
+    // 이 확인이 없으면 수동 기록 후에도 markProcessed 를 따로 돌리기 전까지 알림이 반복된다.
+    // 조회 실패 시에는 알림을 유지한다 — 확인 필요 건을 조용히 넘기지 않는다.
+    if (allowNotionLookup) {
+      try {
+        if (notionHasEmail(messageId)) {
+          base.status = STATUS.SKIPPED_DUPLICATE;
+          base.reason = '확인 필요 메일이지만 이미 Notion 에 기록돼 있습니다(사람이 처리한 것으로 봄).';
+          return base;
+        }
+      } catch (e) {}
+    }
     base.status = verdict.status;
     base.reason = verdict.reason;
     return base;
